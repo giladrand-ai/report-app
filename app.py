@@ -4,6 +4,8 @@
 
 import streamlit as st
 import time
+from datetime import datetime, timedelta
+import extra_streamlit_components as stx
 
 from sheets import (
     load_names, count_submissions_for_date,
@@ -386,6 +388,17 @@ except Exception as _ex:
     st.error(f"❌ שגיאת חיבור לגיליון: {_ex}")
     st.stop()
 
+# ── Cookie Auth ──────────────────────────────────────────────
+cookie_manager = stx.CookieManager()
+saved_cookie_name = cookie_manager.get("saved_user_name")
+
+if st.session_state.user_name is None and not st.session_state.show_name_form:
+    if saved_cookie_name:
+        info = get_user_info(saved_cookie_name, names)
+        if info:
+            st.session_state.user_name = info["full_name"]
+            st.session_state.user_row  = info["row"]
+
 
 # ════════════════════════════════════════════════════════════
 # PAGE: NAME SELECTION
@@ -420,6 +433,9 @@ if st.session_state.user_name is None or st.session_state.show_name_form:
             st.session_state.user_name      = info["full_name"]
             st.session_state.user_row       = info["row"]
             st.session_state.show_name_form = False
+            # Save name in cookie for 10 years
+            expire_date = datetime.now() + timedelta(days=3650)
+            cookie_manager.set("saved_user_name", info["full_name"], expires_at=expire_date)
             st.rerun()
     st.stop()
 
@@ -519,6 +535,7 @@ with _c_sw:
     if st.button("החלף שם", type="primary", key="switch_btn", use_container_width=True):
         st.session_state.show_name_form = True
         st.session_state.show_success   = False
+        cookie_manager.delete("saved_user_name")
         st.rerun()
 
 # ── Thursday date selector ───────────────────────────────────
