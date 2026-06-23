@@ -1,0 +1,22 @@
+# Ignore credentials — NEVER commit this file!
+*.json
+
+# Streamlit secrets (for local dev)
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
