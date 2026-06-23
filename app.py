@@ -436,8 +436,12 @@ if st.session_state.user_name is None or st.session_state.show_name_form:
             # Save name in cookie for 10 years
             expire_date = datetime.now() + timedelta(days=3650)
             cookie_manager.set("saved_user_name", info["full_name"], expires_at=expire_date)
-            st.rerun()
-    st.stop()
+            # DO NOT call st.rerun() here. Let the script continue downwards 
+            # so the main app renders AND the set_cookie command is sent!
+        else:
+            st.stop()
+    else:
+        st.stop()
 
 
 # ════════════════════════════════════════════════════════════
