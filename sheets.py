@@ -289,14 +289,14 @@ def load_leaderboard() -> list[dict]:
 def calculate_streak(user_row: int) -> int:
     """
     Count consecutive days (backwards from yesterday) where the user
-    has a non-empty status cell in 'ימ"מים'.
+    has a non-empty timestamp cell in 'שעות דיווח'.
 
     Returns:
         int: streak count (0 if no streak).
     """
     from datetime import timedelta
 
-    ws = _get_sheet(SHEET_YAMAMIM)
+    ws = _get_sheet(SHEET_SHAOT)
     date_row  = ws.row_values(DATES_ROW)       # All date header values
     user_row_values = ws.row_values(user_row)   # All values for this user
 
