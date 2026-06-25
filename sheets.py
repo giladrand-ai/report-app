@@ -3,6 +3,7 @@
 # ============================================================
 
 import time
+import functools
 import gspread
 from gspread.utils import rowcol_to_a1
 from google.oauth2.service_account import Credentials
@@ -21,6 +22,20 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
+
+def with_retry(func):
+    """Retry Google Sheets API calls up to 3 times on APIError (e.g., rate limits)."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        retries = 3
+        for attempt in range(retries):
+            try:
+                return func(*args, **kwargs)
+            except gspread.exceptions.APIError as e:
+                if attempt == retries - 1:
+                    raise e
+                time.sleep(1.0 * (2 ** attempt))  # 1s, 2s, 4s wait
+    return wrapper
 
 
 # ── Authentication ───────────────────────────────────────────
@@ -60,6 +75,7 @@ def _get_sheet(sheet_name: str) -> gspread.Worksheet:
 # ── Name Loading ─────────────────────────────────────────────
 
 @st.cache_data(ttl=CACHE_TTL)
+@with_retry
 def load_names() -> list[dict]:
     """
     Load all participant names from 'ימ"מים' sheet (A3:B60).
@@ -101,6 +117,7 @@ def count_participants(names: list[dict]) -> int:
 # ── Date Column Lookup ───────────────────────────────────────
 
 @st.cache_data(ttl=CACHE_TTL)
+@with_retry
 def find_column_map() -> dict:
     """
     Scan row 2 of 'ימ"מים' from column C onwards to build a dynamic column map.
@@ -150,6 +167,7 @@ def find_date_column(date_str: str) -> int | None:
 # ── Submission Status Checks ─────────────────────────────────
 
 @st.cache_data(ttl=CACHE_TTL)
+@with_retry
 def load_status_column(date_str: str) -> tuple[list, int | None]:
     """
     Load the full status column for a given date from 'ימ"מים'.
@@ -195,6 +213,7 @@ def count_submissions_for_date(date_str: str) -> int:
 
 # ── Score & Rank Loading ─────────────────────────────────────
 
+@with_retry
 def load_user_score_and_rank(user_row: int) -> tuple[float | None, int | None]:
     """
     Read total cumulative score and rank for a specific user row.
@@ -217,6 +236,7 @@ def load_user_score_and_rank(user_row: int) -> tuple[float | None, int | None]:
     return total_score, rank
 
 
+@with_retry
 def load_daily_score(user_row: int, date_str: str) -> float | None:
     """
     Read the daily score for a user on a specific date from 'ניקוד'.
@@ -233,6 +253,7 @@ def load_daily_score(user_row: int, date_str: str) -> float | None:
 # ── Leaderboard ──────────────────────────────────────────────
 
 @st.cache_data(ttl=CACHE_TTL)
+@with_retry
 def load_leaderboard() -> list[dict]:
     """
     Load the top LEADERBOARD_SIZE users by rank.
@@ -286,6 +307,7 @@ def load_leaderboard() -> list[dict]:
 
 # ── Streak Calculation ───────────────────────────────────────
 
+@with_retry
 def calculate_streak(user_row: int) -> int:
     """
     Count consecutive days (backwards from yesterday) where the user
@@ -321,6 +343,7 @@ def calculate_streak(user_row: int) -> int:
 
 # ── Write Operations ─────────────────────────────────────────
 
+@with_retry
 def submit_status(user_row: int, col_idx: int, color_rgb: dict) -> bool:
     """
     Write status '1' and paint the cell background in 'ימ"מים'.
@@ -384,6 +407,7 @@ def wait_for_sheet_recalc(seconds: float = 2.0):
 
 # ── Full Submission Flow ─────────────────────────────────────
 
+@with_retry
 def perform_first_submission(
     user_row: int,
     date_str: str,
@@ -424,6 +448,7 @@ def perform_first_submission(
     return total_score, rank, True
 
 
+@with_retry
 def perform_resubmission(
     user_row: int,
     date_str: str,
