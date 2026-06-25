@@ -4,6 +4,7 @@
 
 import time
 import functools
+import random
 import gspread
 from gspread.utils import rowcol_to_a1
 from google.oauth2.service_account import Credentials
@@ -24,17 +25,20 @@ SCOPES = [
 ]
 
 def with_retry(func):
-    """Retry Google Sheets API calls up to 3 times on APIError (e.g., rate limits)."""
+    """Retry Google Sheets API calls up to 5 times on APIError with backoff and jitter."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        retries = 3
+        retries = 5
         for attempt in range(retries):
             try:
                 return func(*args, **kwargs)
             except gspread.exceptions.APIError as e:
                 if attempt == retries - 1:
-                    raise e
-                time.sleep(1.0 * (2 ** attempt))  # 1s, 2s, 4s wait
+                    st.error("⚠️ העומס על המערכת גבוה כרגע (יותר מדי משתמשים במקביל). אנא רעננו את הדף או נסו שוב בעוד 10 שניות.")
+                    st.stop()
+                # Exponential backoff with random jitter to prevent thundering herd
+                sleep_time = (1.5 ** attempt) + random.uniform(0.5, 2.0)
+                time.sleep(sleep_time)
     return wrapper
 
 
