@@ -174,7 +174,9 @@ def find_date_column(date_str: str) -> int | None:
 @with_retry
 def load_status_column(date_str: str) -> tuple[list, int | None]:
     """
-    Load the full status column for a given date from 'ימ"מים'.
+    Load the full submission timestamp column for a given date from 'שעות דיווח'.
+    We use this to determine if a user actually reported via the app, 
+    even if their status in ימ"מים was manually changed.
 
     Returns:
         (column_values_list, col_idx) or ([], None) if date not found.
@@ -183,7 +185,7 @@ def load_status_column(date_str: str) -> tuple[list, int | None]:
     col_idx = find_date_column(date_str)
     if col_idx is None:
         return [], None
-    ws = _get_sheet(SHEET_YAMAMIM)
+    ws = _get_sheet(SHEET_SHAOT)
     return ws.col_values(col_idx), col_idx
 
 
