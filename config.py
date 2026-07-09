@@ -11,7 +11,7 @@ SHEET_NIKUD   = 'ניקוד'      # Scores sheet
 
 # ── Data Layout (1-based row/col numbers) ───────────────────
 NAMES_START_ROW = 3    # First row of name data
-NAMES_END_ROW   = 60   # Last possible row
+NAMES_END_ROW   = 100  # Last possible row
 DATES_ROW       = 2    # Row containing date headers (d.m format)
 DATA_START_COL  = 3    # Column C — first date column
 
